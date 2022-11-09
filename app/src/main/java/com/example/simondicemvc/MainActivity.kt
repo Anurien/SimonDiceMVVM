@@ -39,15 +39,19 @@ class MainActivity : AppCompatActivity() {
 
         bRed.setOnClickListener {
             otraClase.comprobar("rojo")
+            otraClase.mostrarSecuencia(botones)
         }
         bBlue.setOnClickListener {
             otraClase.comprobar("azul")
+            otraClase.mostrarSecuencia(botones)
         }
         bYellow.setOnClickListener {
             otraClase.comprobar("amarillo")
+            otraClase.mostrarSecuencia(botones)
         }
         bGreen.setOnClickListener {
             otraClase.comprobar("verde")
+            otraClase.mostrarSecuencia(botones)
         }
         binit.setOnClickListener {
             otraClase.iniciarPartida(botones)

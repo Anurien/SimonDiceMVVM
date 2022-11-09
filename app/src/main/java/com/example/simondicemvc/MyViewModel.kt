@@ -6,10 +6,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.collections.List
 
 class MyViewModel : ViewModel() {
-    private var secuencia = ArrayList<String>() //Secuencia en ronda actual
-    private var comprobar = ArrayList<String>() //Secuencia de comprobacion
     private var ronda = 1     //número de ronda
     private var numero = 1    //número de luces encendidas
 
@@ -40,47 +39,43 @@ class MyViewModel : ViewModel() {
     internal fun iniciarPartida(listaBotones: List<Button>) {
         estado.value = false
         borrar()
-        mostrarSecuencia(listaBotones)
+         mostrarSecuencia(listaBotones)
     }
 
     /**
      * Muesta una secuencia de parpadeos
      * @numero: número de parpadeos que se van a realizar
      */
-    private fun mostrarSecuencia(listaBotones: List<Button>) {
+    fun mostrarSecuencia(listaBotones: List<Button>) {
 
         var encendido = 0L
-        val random = Random().nextInt(4)
-        // el ? en el value verifica si hay algo almacenado o no
-        encendido += 750L
-        when (random) {
-            0 -> {
-                parpadeo(encendido, "azul", listOf(listaBotones[0]))
-                secuencia.add("azul")
-                secJuego.value?.add("azul")
-                secJuego.postValue(secJuego.value)
-            }
-            1 -> {
-                parpadeo(encendido, "amarillo", listOf(listaBotones[1]))
-                secuencia.add("amarillo")
-                secJuego.value?.add("amarillo")
-                secJuego.postValue(secJuego.value)
-            }
-            2 -> {
-                parpadeo(encendido, "verde", listOf(listaBotones[2]))
-                secuencia.add("amarillo")
-                secJuego.value?.add("amarillo")
-                secJuego.postValue(secJuego.value)
-            }
-            3 -> {
-                parpadeo(encendido, "rojo", listOf(listaBotones[3]))
-                secuencia.add("rojo")
-                secJuego.value?.add("rojo")
-                secJuego.postValue(secJuego.value)
+        for (i in 1..numero) {
+            val random = Random().nextInt(4)
+            // el ? en el value verifica si hay algo almacenado o no
+            encendido += 750L
+            when (random) {
+                0 -> {
+                    parpadeo(encendido, "azul", listaBotones[0])
+                    secJuego.value?.add("azul")
+                    secJuego.postValue(secJuego.value)
+                }
+                1 -> {
+                    parpadeo(encendido, "amarillo", listaBotones[1])
+                    secJuego.value?.add("amarillo")
+                    secJuego.postValue(secJuego.value)
+                }
+                2 -> {
+                    parpadeo(encendido, "verde", listaBotones[2])
+                    secJuego.value?.add("amarillo")
+                    secJuego.postValue(secJuego.value)
+                }
+                3 -> {
+                    parpadeo(encendido, "rojo", listaBotones[3])
+                    secJuego.value?.add("rojo")
+                    secJuego.postValue(secJuego.value)
+                }
             }
         }
-
-        comprobar = secuencia
     }
 
     /**
@@ -91,31 +86,29 @@ class MyViewModel : ViewModel() {
      * @actual: número de luz actual que se va a encender respecto a @maximo de luces que se encienden
      */
     @OptIn(DelicateCoroutinesApi::class)
-    private fun parpadeo(encendido: Long, color: String, listaBotones: List<Button>) {
-        GlobalScope.launch(Dispatchers.Main) {
-            for (colors in secJuego.value!!) {
-                delay(encendido)
-                when (color) {
-                    "azul" -> {
-                        listaBotones[0].setBackgroundResource(R.drawable.blue_on)
-                        delay(500L)
-                        listaBotones[0].setBackgroundResource(R.drawable.blue_button)
-                    }
-                    "amarillo" -> {
-                        listaBotones[1].setBackgroundResource(R.drawable.yellow_on)
-                        delay(500L)
-                        listaBotones[1].setBackgroundResource(R.drawable.yellow_button)
-                    }
-                    "verde" -> {
-                        listaBotones[2].setBackgroundResource(R.drawable.green_on)
-                        delay(500L)
-                        listaBotones[2].setBackgroundResource(R.drawable.green_button)
-                    }
-                    "rojo" -> {
-                        listaBotones[3].setBackgroundResource(R.drawable.red_on)
-                        delay(500L)
-                        listaBotones[3].setBackgroundResource(R.drawable.red_button)
-                    }
+    private fun parpadeo(encendido: Long, color: String, listaBotones: Button) {
+        GlobalScope.launch {
+            delay(encendido)
+            when (color) {
+                "azul" -> {
+                    listaBotones.setBackgroundResource(R.drawable.blue_on)
+                    delay(500L)
+                    listaBotones.setBackgroundResource(R.drawable.blue_button)
+                }
+                "amarillo" -> {
+                    listaBotones.setBackgroundResource(R.drawable.yellow_on)
+                    delay(500L)
+                    listaBotones.setBackgroundResource(R.drawable.yellow_button)
+                }
+                "verde" -> {
+                    listaBotones.setBackgroundResource(R.drawable.green_on)
+                    delay(500L)
+                    listaBotones.setBackgroundResource(R.drawable.green_button)
+                }
+                "rojo" -> {
+                    listaBotones.setBackgroundResource(R.drawable.red_on)
+                    delay(500L)
+                    listaBotones.setBackgroundResource(R.drawable.red_button)
                 }
             }
         }
@@ -141,22 +134,10 @@ class MyViewModel : ViewModel() {
                 if (secJuego.value?.isEmpty() == true) {
                     numero++
                     ronda++
-                    /*  runBlocking {
-                          Toast.makeText(this@MainActivity, "Ronda: $ronda", Toast.LENGTH_SHORT)
-                              .show()
-                      }*/
-                    /*val rond: TextView = findViewById(R.id.ronda)
-                    rond.text = "Ronda: $ronda"*/
                 }
             } else {
                 ronda = 1
                 numero = 1
-
-                /*Toast.makeText(
-                    this@MainActivity, "Ohhh...has fallado,vuelve a intentarlo", Toast.LENGTH_SHORT
-                ).show()
-                val rond: TextView = findViewById(R.id.ronda)
-                rond.text = "Ronda: $ronda"*/
                 borrar()
             }
         }
