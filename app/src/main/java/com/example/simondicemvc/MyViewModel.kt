@@ -16,6 +16,7 @@ class MyViewModel : ViewModel() {
     // El MutableLiveData almacena la información para que no se pierda, cuando estamos usando los ViewModel
 
     private var secJuego = MutableLiveData<MutableList<String>>()
+    var liveRonda = MutableLiveData<Int>()
 
 
     // nos será saber el estado del juego para mostrar o no "x" funciones
@@ -23,6 +24,7 @@ class MyViewModel : ViewModel() {
 
     init {
         secJuego.value = mutableListOf()
+        liveRonda.value = ronda
 
     }
 
@@ -39,12 +41,12 @@ class MyViewModel : ViewModel() {
     internal fun iniciarPartida(listaBotones: List<Button>) {
         estado.value = false
         borrar()
-         mostrarSecuencia(listaBotones)
+        mostrarSecuencia(listaBotones)
     }
 
     /**
      * Muesta una secuencia de parpadeos
-     * @numero: número de parpadeos que se van a realizar
+     * @listabotones: una lista con los botones que se tienen que iluminar
      */
     fun mostrarSecuencia(listaBotones: List<Button>) {
 
@@ -82,8 +84,7 @@ class MyViewModel : ViewModel() {
      * Realiza el parpadeo del botón @color
      * @encendido: Milisegundos de la secuenda a los que se va a encender la luz
      * @color: Color que se va a encender
-     * @maximo: número de luces totales que se van a encender
-     * @actual: número de luz actual que se va a encender respecto a @maximo de luces que se encienden
+     * @listabotones: Boton que va a iluminarse
      */
     @OptIn(DelicateCoroutinesApi::class)
     private fun parpadeo(encendido: Long, color: String, listaBotones: Button) {
