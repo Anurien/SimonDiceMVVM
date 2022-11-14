@@ -4,8 +4,10 @@ import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.lifecycle.Observer
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bRed: Button
@@ -56,5 +58,19 @@ class MainActivity : AppCompatActivity() {
         binit.setOnClickListener {
             otraClase.iniciarPartida(botones)
         }
+
+        //Observacion del cambio de Ronda
+        otraClase.liveRonda.observe(
+            this,
+            Observer(
+                fun(ronda: Int) {
+                    var tvRonda: TextView = findViewById(R.id.ronda)
+                    if (ronda == 0) binit.isClickable = true
+
+                    tvRonda.setText("Ronda: " + ronda)
+
+                }
+            )
+        )
     }
 }
