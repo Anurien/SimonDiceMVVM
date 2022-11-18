@@ -1,115 +1,73 @@
 package com.example.simondicemvc
 
 import android.annotation.SuppressLint
-import android.widget.Button
+import android.app.Application
+import android.content.Context
+import android.widget.Toast
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.collections.List
+import kotlin.collections.ArrayList
 
-class MyViewModel : ViewModel() {
+class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var ronda = 1     //número de ronda
     private var numero = 1    //número de luces encendidas
+    private var secuencia = ArrayList<String>() //Secuencia en ronda actual
+    @SuppressLint("StaticFieldLeak")
+    private val context: Context = getApplication<Application>().applicationContext
 
 
     // El MutableLiveData almacena la información para que no se pierda, cuando estamos usando los ViewModel
-
-    private var secJuego = MutableLiveData<MutableList<String>>()
+    var secJuego = MutableLiveData<ArrayList<String>>()
     var liveRonda = MutableLiveData<Int>()
-
 
     // nos será saber el estado del juego para mostrar o no "x" funciones
     private var estado = MutableLiveData<Boolean>()
 
     init {
-        secJuego.value = mutableListOf()
+        secJuego.value = secuencia
         liveRonda.value = ronda
 
     }
 
 
-    // hacemos un metodo para restablecer todos los datos almacenados a 0 y poder iniciar sin nada en memoria
-    private fun borrar() {
-        secJuego.value?.clear()
-
-    }
-
     // el postValue avisa al observador de que cambió un valor para ejecutar el trozo de código una vez haya detectado este cambio
     // el juego esta empezando, borra lo anterior y añade el valor de la lista de colores random
 
-    internal fun iniciarPartida(listaBotones: List<Button>) {
+    internal fun iniciarPartida() {
         estado.value = false
-        borrar()
-        mostrarSecuencia(listaBotones)
+        mostrarSecuencia()
+
     }
 
     /**
      * Muesta una secuencia de parpadeos
      * @listabotones: una lista con los botones que se tienen que iluminar
      */
-    fun mostrarSecuencia(listaBotones: List<Button>) {
+    fun mostrarSecuencia() {
 
         var encendido = 0L
-        for (i in 1..numero) {
+        for (i in 1..ronda) {
             val random = Random().nextInt(4)
             // el ? en el value verifica si hay algo almacenado o no
-            encendido += 750L
+            encendido += 1000L
             when (random) {
                 0 -> {
-                    parpadeo(encendido, "azul", listaBotones[0])
-                    secJuego.value?.add("azul")
-                    secJuego.postValue(secJuego.value)
+                    secuencia.add("azul")
+                    secJuego.setValue(secuencia)
                 }
                 1 -> {
-                    parpadeo(encendido, "amarillo", listaBotones[1])
-                    secJuego.value?.add("amarillo")
-                    secJuego.postValue(secJuego.value)
+                    secuencia.add("amarillo")
+                    secJuego.setValue(secuencia)
                 }
                 2 -> {
-                    parpadeo(encendido, "verde", listaBotones[2])
-                    secJuego.value?.add("amarillo")
-                    secJuego.postValue(secJuego.value)
+                    secuencia.add("verde")
+                    secJuego.setValue(secuencia)
                 }
                 3 -> {
-                    parpadeo(encendido, "rojo", listaBotones[3])
-                    secJuego.value?.add("rojo")
-                    secJuego.postValue(secJuego.value)
-                }
-            }
-        }
-    }
-
-    /**
-     * Realiza el parpadeo del botón @color
-     * @encendido: Milisegundos de la secuenda a los que se va a encender la luz
-     * @color: Color que se va a encender
-     * @listabotones: Boton que va a iluminarse
-     */
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun parpadeo(encendido: Long, color: String, listaBotones: Button) {
-        GlobalScope.launch {
-            delay(encendido)
-            when (color) {
-                "azul" -> {
-                    listaBotones.setBackgroundResource(R.drawable.blue_on)
-                    delay(500L)
-                    listaBotones.setBackgroundResource(R.drawable.blue_button)
-                }
-                "amarillo" -> {
-                    listaBotones.setBackgroundResource(R.drawable.yellow_on)
-                    delay(500L)
-                    listaBotones.setBackgroundResource(R.drawable.yellow_button)
-                }
-                "verde" -> {
-                    listaBotones.setBackgroundResource(R.drawable.green_on)
-                    delay(500L)
-                    listaBotones.setBackgroundResource(R.drawable.green_button)
-                }
-                "rojo" -> {
-                    listaBotones.setBackgroundResource(R.drawable.red_on)
-                    delay(500L)
-                    listaBotones.setBackgroundResource(R.drawable.red_button)
+                    secuencia.add("rojo")
+                    secJuego.setValue(secuencia)
                 }
             }
         }
@@ -122,24 +80,42 @@ class MyViewModel : ViewModel() {
      */
     @SuppressLint("SetTextI18n")
     fun comprobar(color: String) {
-        if (secJuego.value?.isEmpty() == true) {
+        if (secuencia.isEmpty()) {
             ronda = 1
             numero = 1
+            liveRonda.value = ronda
 
-            // Toast.makeText(this@MainActivity, "Presiona Play para jugar", Toast.LENGTH_SHORT).show()
-            borrar()
+            Toast.makeText(context, "Presiona Play para jugar", Toast.LENGTH_SHORT)
+                .show()
+            secuencia.clear()
+            secJuego.value?.clear()
         } else {
-            if (secJuego.value?.get(0).equals(color)) {
-                secJuego.value?.removeAt(0)
-                //Toast.makeText(this@MainActivity, "Acierto", Toast.LENGTH_SHORT).show()
-                if (secJuego.value?.isEmpty() == true) {
+            if (secuencia[0] == color) {
+                secuencia.removeAt(0)
+                secJuego.value = secuencia
+                Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
+                if (secuencia.isEmpty()) {
                     numero++
                     ronda++
+                    liveRonda.value = ronda
+                    runBlocking {
+                        Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                    mostrarSecuencia()
                 }
             } else {
                 ronda = 1
                 numero = 1
-                borrar()
+                liveRonda.value = ronda
+
+                Toast.makeText(
+                    context,
+                    "Ohhh...has fallado,vuelve a intentarlo",
+                    Toast.LENGTH_SHORT
+                ).show()
+                secuencia.clear()
+                secJuego.value?.clear()
             }
         }
     }

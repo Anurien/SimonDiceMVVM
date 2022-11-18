@@ -1,5 +1,6 @@
 package com.example.simondicemvc
 
+import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -8,6 +9,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bRed: Button
@@ -26,6 +31,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -41,34 +47,66 @@ class MainActivity : AppCompatActivity() {
 
         bRed.setOnClickListener {
             otraClase.comprobar("rojo")
-            otraClase.mostrarSecuencia(botones)
         }
         bBlue.setOnClickListener {
             otraClase.comprobar("azul")
-            otraClase.mostrarSecuencia(botones)
         }
         bYellow.setOnClickListener {
             otraClase.comprobar("amarillo")
-            otraClase.mostrarSecuencia(botones)
         }
         bGreen.setOnClickListener {
             otraClase.comprobar("verde")
-            otraClase.mostrarSecuencia(botones)
         }
         binit.setOnClickListener {
-            otraClase.iniciarPartida(botones)
+            otraClase.iniciarPartida()
         }
 
         //Observacion del cambio de Ronda
         otraClase.liveRonda.observe(
             this,
             Observer(
+                @SuppressLint("SetTextI18n")
                 fun(ronda: Int) {
-                    var tvRonda: TextView = findViewById(R.id.ronda)
-                    if (ronda == 0) binit.isClickable = true
+                    val tvRonda: TextView = findViewById(R.id.ronda)
+                    if (ronda == 1) binit.isClickable = true
 
-                    tvRonda.setText("Ronda: " + ronda)
+                    tvRonda.setText("Ronda: $ronda")
 
+                }
+            )
+        )
+        //Observacion de la secuencia
+        otraClase.secJuego.observe(
+            this,
+            Observer(
+                fun(secuencia: ArrayList<String>) {
+                    GlobalScope.launch {
+                        for (color in secuencia) {
+                            delay(1000)
+                            when (color) {
+                                "azul" -> {
+                                    botones[0].setBackgroundResource(R.drawable.blue_on)
+                                    delay(500L)
+                                    botones[0].setBackgroundResource(R.drawable.blue_button)
+                                }
+                                "amarillo" -> {
+                                    botones[1].setBackgroundResource(R.drawable.yellow_on)
+                                    delay(500L)
+                                    botones[1].setBackgroundResource(R.drawable.yellow_button)
+                                }
+                                "verde" -> {
+                                    botones[2].setBackgroundResource(R.drawable.green_on)
+                                    delay(500L)
+                                    botones[2].setBackgroundResource(R.drawable.green_button)
+                                }
+                                "rojo" -> {
+                                    botones[3].setBackgroundResource(R.drawable.red_on)
+                                    delay(500L)
+                                    botones[3].setBackgroundResource(R.drawable.red_button)
+                                }
+                            }
+                        }
+                    }
                 }
             )
         )
