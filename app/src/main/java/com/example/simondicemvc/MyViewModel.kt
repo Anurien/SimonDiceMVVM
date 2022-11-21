@@ -14,6 +14,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var ronda = 1     //número de ronda
     private var numero = 1    //número de luces encendidas
     private var secuencia = ArrayList<String>() //Secuencia en ronda actual
+
     @SuppressLint("StaticFieldLeak")
     private val context: Context = getApplication<Application>().applicationContext
 
