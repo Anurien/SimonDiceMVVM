@@ -3,17 +3,24 @@ package com.example.simondicemvc
 import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.room.Room
+import androidx.room.RoomDatabase
 import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
 
+@OptIn(DelicateCoroutinesApi::class)
 class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var ronda = 1     //número de ronda
+    private var record = 1     //número de record
     private var numero = 1    //número de luces encendidas
     private var secuencia = ArrayList<String>() //Secuencia en ronda actual
+    var room: AppDatabase? = null
+
 
     @SuppressLint("StaticFieldLeak")
     private val context: Context = getApplication<Application>().applicationContext
@@ -22,6 +29,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     // El MutableLiveData almacena la información para que no se pierda, cuando estamos usando los ViewModel
     var secJuego = MutableLiveData<ArrayList<String>>()
     var liveRonda = MutableLiveData<Int>()
+    var liveRecord = MutableLiveData<Int>()
 
     // nos será saber el estado del juego para mostrar o no "x" funciones
     private var estado = MutableLiveData<Boolean>()
@@ -29,9 +37,41 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     init {
         secJuego.value = secuencia
         liveRonda.value = ronda
+        //liveRecord.value = record
+        room = Room
+            .databaseBuilder(
+                context,
+                AppDatabase::class.java, "record"
+            )
+            .build()
+        recogerRecord()
 
     }
 
+    fun recogerRecord() {
+        val roomCorrutine = GlobalScope.launch(Dispatchers.IO) {
+            try {
+                record = room!!.recordDao().getRecord()
+                Log.d("recSQLite", record.toString())
+            } catch (ex: java.lang.NullPointerException) {
+                room!!.recordDao().crearRecord()
+                liveRecord.value = room!!.recordDao().getRecord()
+            }
+        }
+        roomCorrutine.start()
+    }
+
+    fun actualizarRecord() {
+        //if (record < ronda) {
+        liveRecord.value = ronda
+        recogerRecord()
+        //}
+        val updateCorrutine = GlobalScope.launch(Dispatchers.Main) {
+
+            room!!.recordDao().update(Record(1, ronda))
+        }
+        updateCorrutine.start()
+    }
 
     // el postValue avisa al observador de que cambió un valor para ejecutar el trozo de código una vez haya detectado este cambio
     // el juego esta empezando, borra lo anterior y añade el valor de la lista de colores random
@@ -39,7 +79,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     internal fun iniciarPartida() {
         estado.value = false
         mostrarSecuencia()
-
+        recogerRecord()
     }
 
     /**
@@ -104,6 +144,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                             .show()
                     }
                     mostrarSecuencia()
+                    actualizarRecord()
                 }
             } else {
                 ronda = 1
@@ -117,6 +158,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                 ).show()
                 secuencia.clear()
                 secJuego.value?.clear()
+                //actualizarRecord()
             }
         }
     }

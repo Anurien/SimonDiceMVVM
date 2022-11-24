@@ -1,22 +1,20 @@
 package com.example.simondicemvc
 
-import androidx.room.Delete
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
-
+import androidx.room.*
+@Dao
 interface RecordDao {
-    @Query("SELECT * FROM record ORDER BY name")
-    fun getRecord(): Flow<List<Record>>
+    @Query("SELECT * FROM record WHERE id= 1")
+    fun getRecord(): Int
 
-    @Query("SELECT * FROM record WHERE name = :record")
-    fun getRecord(record: String): Flow<Record>
+    @Query("INSERT INTO record (record) VALUES (0)")
+    suspend fun crearRecord()
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(record: List<Record>)
+    @Update
+    suspend fun update(record: Record)
+
+   /* @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(record: Int)*/
 
     @Delete
     fun delete(user: Record)
-
 }

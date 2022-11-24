@@ -9,10 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var bRed: Button
@@ -80,7 +77,7 @@ class MainActivity : AppCompatActivity() {
             this,
             Observer(
                 fun(secuencia: ArrayList<String>) {
-                    GlobalScope.launch {
+                    GlobalScope.launch(Dispatchers.Main) {
                         for (color in secuencia) {
                             delay(1000)
                             when (color) {
