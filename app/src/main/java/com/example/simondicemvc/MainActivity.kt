@@ -72,11 +72,24 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         )
+        //Observacion del cambio de Record
+        otraClase.liveRecord.observe(
+            this,
+            Observer(
+                @SuppressLint("SetTextI18n")
+                fun(record: Int) {
+                    val tvRecord: TextView = findViewById(R.id.record)
+
+                    tvRecord.setText("Record: $record")
+
+                }
+            )
+        )
         //Observacion de la secuencia
         otraClase.secJuego.observe(
             this,
             Observer(
-                fun(secuencia: ArrayList<String>) {
+                fun(secuencia: MutableList<String>) {
                     GlobalScope.launch(Dispatchers.Main) {
                         for (color in secuencia) {
                             delay(1000)

@@ -18,8 +18,6 @@
                 android:bottomRightRadius="0dp"
                 android:topLeftRadius="0dp"
                 android:topRightRadius="300dp" />
-            <padding android:bottom="100dp"
-                android:left="190dp"/>
         </shape>
     </item>
 </layer-list>

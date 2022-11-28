@@ -19,6 +19,8 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var record = 1     //número de record
     private var numero = 1    //número de luces encendidas
     private var secuencia = ArrayList<String>() //Secuencia en ronda actual
+    private var comprobacion = ArrayList<String>() //Secuencia comprobar en ronda actual
+    var indice = 1
     var room: AppDatabase? = null
 
 
@@ -37,38 +39,49 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     init {
         secJuego.value = secuencia
         liveRonda.value = ronda
-        //liveRecord.value = record
+        liveRecord.value = record
         room = Room
             .databaseBuilder(
                 context,
-                AppDatabase::class.java, "record"
+                AppDatabase::class.java, "Record"
             )
             .build()
-        recogerRecord()
+        //recogerRecord()
 
-    }
-
-    fun recogerRecord() {
-        val roomCorrutine = GlobalScope.launch(Dispatchers.IO) {
+        val roomCorrutine = GlobalScope.launch(Dispatchers.Main) {
             try {
-                record = room!!.recordDao().getRecord()
-                Log.d("recSQLite", record.toString())
+                liveRecord.value = room!!.recordDao().getRecord()
+                Log.d("recSQLite", liveRecord.value.toString())
             } catch (ex: java.lang.NullPointerException) {
                 room!!.recordDao().crearRecord()
                 liveRecord.value = room!!.recordDao().getRecord()
             }
         }
         roomCorrutine.start()
+
     }
 
+    /* fun recogerRecord() {
+         val roomCorrutine = GlobalScope.launch(Dispatchers.IO) {
+             try {
+                 record = room!!.recordDao().getRecord()
+                 Log.d("recSQLite", record.toString())
+             } catch (ex: java.lang.NullPointerException) {
+                 room!!.recordDao().crearRecord()
+                 liveRecord.value = room!!.recordDao().getRecord()
+             }
+         }
+         roomCorrutine.start()
+     }*/
+
     fun actualizarRecord() {
-        //if (record < ronda) {
-        liveRecord.value = ronda
-        recogerRecord()
+        // if (record < ronda) {
+        liveRecord.value = liveRonda.value
+        //recogerRecord()
         //}
         val updateCorrutine = GlobalScope.launch(Dispatchers.Main) {
 
-            room!!.recordDao().update(Record(1, ronda))
+            room!!.recordDao().update(Record(1, liveRecord.value))
         }
         updateCorrutine.start()
     }
@@ -79,7 +92,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     internal fun iniciarPartida() {
         estado.value = false
         mostrarSecuencia()
-        recogerRecord()
+        //recogerRecord()
     }
 
     /**
@@ -121,7 +134,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
      */
     @SuppressLint("SetTextI18n")
     fun comprobar(color: String) {
-        if (secuencia.isEmpty()) {
+        /*if (secuencia.isEmpty()) {
             ronda = 1
             numero = 1
             liveRonda.value = ronda
@@ -130,27 +143,71 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                 .show()
             secuencia.clear()
             secJuego.value?.clear()
-        } else {
-            if (secuencia[0] == color) {
-                secuencia.removeAt(0)
-                secJuego.value = secuencia
+            comprobacion.clear()
+        } else {*/
+       /* val iterator = comprobacion.iterator()
+        while(iterator.hasNext()){
+            val item = iterator.next()
+            if(item[indice] == indice){
+                iterator.remove()
+            }
+        }*/
+            comprobacion.add(color)
+            indice = comprobacion.size - 1
+            val resultado = comprobacion[indice] == secuencia[indice]
+            if (comprobacion.size == ronda) {
                 Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
-                if (secuencia.isEmpty()) {
-                    numero++
-                    ronda++
-                    liveRonda.value = ronda
-                    runBlocking {
-                        Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
-                            .show()
-                    }
-                    mostrarSecuencia()
-                    actualizarRecord()
+                numero++
+                ronda++
+                //record++
+                liveRonda.value = ronda
+                // liveRecord.value = record
+                runBlocking {
+                    Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
+                        .show()
                 }
-            } else {
+                actualizarRecord()
+                mostrarSecuencia()
+                comprobacion = arrayListOf()
+            }
+            if (!resultado && comprobacion.size != ronda) {
                 ronda = 1
                 numero = 1
                 liveRonda.value = ronda
+                // liveRecord.value = record
+                actualizarRecord()
+                Toast.makeText(
+                    context,
+                    "Ohhh...has fallado,vuelve a intentarlo",
+                    Toast.LENGTH_SHORT
+                ).show()
+                secuencia.clear()
+                comprobacion.clear()
+                secJuego.value?.clear()
+                /*if (secuencia[0] == color) {
+                    secuencia.removeAt(0)
+                    secJuego.value = secuencia
+                    Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
+                    if (secuencia.isEmpty()) {
+                        numero++
+                        ronda++
+                        //record++
+                        liveRonda.value = ronda
+                       // liveRecord.value = record
+                        runBlocking {
+                            Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                        actualizarRecord()
+                        mostrarSecuencia()
 
+                    }*/
+            } /*else {
+                ronda = 1
+                numero = 1
+                liveRonda.value = ronda
+                // liveRecord.value = record
+                actualizarRecord()
                 Toast.makeText(
                     context,
                     "Ohhh...has fallado,vuelve a intentarlo",
@@ -158,8 +215,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                 ).show()
                 secuencia.clear()
                 secJuego.value?.clear()
-                //actualizarRecord()
-            }
+
+            }*/
         }
     }
-}

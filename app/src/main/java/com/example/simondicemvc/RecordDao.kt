@@ -3,10 +3,10 @@ package com.example.simondicemvc
 import androidx.room.*
 @Dao
 interface RecordDao {
-    @Query("SELECT * FROM record WHERE id= 1")
-    fun getRecord(): Int
+    @Query("SELECT record FROM Record WHERE id= 1")
+    suspend fun getRecord(): Int
 
-    @Query("INSERT INTO record (record) VALUES (0)")
+    @Query("INSERT INTO Record (record) VALUES (0)")
     suspend fun crearRecord()
 
     @Update
