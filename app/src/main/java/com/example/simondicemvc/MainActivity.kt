@@ -9,6 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
+import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
@@ -32,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        //Inicializar el firebase en tod0 el proyecto en vez de solo en el activity
+        FirebaseApp.initializeApp(this);
         val otraClase by viewModels<MyViewModel>()
 
         bRed = findViewById(R.id.red)
