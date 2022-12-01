@@ -9,9 +9,18 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
+import com.google.firebase.database.ktx.getValue
+
 
 @OptIn(DelicateCoroutinesApi::class)
 class MyViewModel(application: Application) : AndroidViewModel(application) {
@@ -20,6 +29,7 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var numero = 1    //número de luces encendidas
     private var secuencia = ArrayList<String>() //Secuencia en ronda actual
     private var comprobacion = ArrayList<String>() //Secuencia comprobar en ronda actual
+    private lateinit var fireBaseR : DatabaseReference
     var indice = 1
     var room: AppDatabase? = null
 
@@ -40,7 +50,20 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
         secJuego.value = secuencia
         liveRonda.value = ronda
         liveRecord.value = record
-        room = Room
+        fireBaseR = Firebase.database("https://simondicef-default-rtdb.europe-west1.firebasedatabase.app/").getReference("record")
+        //Defino el listener de la puntuación
+        val recordListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                liveRecord.value = dataSnapshot.getValue<Int>()
+                Log.d("RecFirebase", liveRecord.value.toString())
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.d("ReaLTime", "recordListener:OnCancelled", error.toException())
+            }
+        }
+        //Añado el listener a la BD
+        fireBaseR.addValueEventListener(recordListener)
+     /*   room = Room
             .databaseBuilder(
                 context,
                 AppDatabase::class.java, "Record"
@@ -57,33 +80,20 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                 liveRecord.value = room!!.recordDao().getRecord()
             }
         }
-        roomCorrutine.start()
+        roomCorrutine.start()*/
 
     }
 
-    /* fun recogerRecord() {
-         val roomCorrutine = GlobalScope.launch(Dispatchers.IO) {
-             try {
-                 record = room!!.recordDao().getRecord()
-                 Log.d("recSQLite", record.toString())
-             } catch (ex: java.lang.NullPointerException) {
-                 room!!.recordDao().crearRecord()
-                 liveRecord.value = room!!.recordDao().getRecord()
-             }
-         }
-         roomCorrutine.start()
-     }*/
-
     fun actualizarRecord() {
-        // if (record < ronda) {
         liveRecord.value = liveRonda.value
-        //recogerRecord()
-        //}
-        val updateCorrutine = GlobalScope.launch(Dispatchers.Main) {
+       fireBaseR.setValue(liveRecord.value)
+        Log.d("FireAct",liveRecord.toString())
+       /* val updateCorrutine = GlobalScope.launch(Dispatchers.Main) {
 
             room!!.recordDao().update(Record(1, liveRecord.value))
         }
-        updateCorrutine.start()
+        updateCorrutine.start()*/
+
     }
 
     // el postValue avisa al observador de que cambió un valor para ejecutar el trozo de código una vez haya detectado este cambio
@@ -96,35 +106,33 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Muesta una secuencia de parpadeos
-     * @listabotones: una lista con los botones que se tienen que iluminar
+     * Muesta una secuencia de parpadeos que se guardan en la secuencia
      */
     fun mostrarSecuencia() {
 
         var encendido = 0L
-        for (i in 1..ronda) {
-            val random = Random().nextInt(4)
-            // el ? en el value verifica si hay algo almacenado o no
-            encendido += 1000L
-            when (random) {
-                0 -> {
-                    secuencia.add("azul")
-                    secJuego.setValue(secuencia)
-                }
-                1 -> {
-                    secuencia.add("amarillo")
-                    secJuego.setValue(secuencia)
-                }
-                2 -> {
-                    secuencia.add("verde")
-                    secJuego.setValue(secuencia)
-                }
-                3 -> {
-                    secuencia.add("rojo")
-                    secJuego.setValue(secuencia)
-                }
+        //for (i in 1..ronda) {
+        val random = Random().nextInt(4)
+        encendido += 1000L
+        when (random) {
+            0 -> {
+                secuencia.add("azul")
+                secJuego.setValue(secuencia)
+            }
+            1 -> {
+                secuencia.add("amarillo")
+                secJuego.setValue(secuencia)
+            }
+            2 -> {
+                secuencia.add("verde")
+                secJuego.setValue(secuencia)
+            }
+            3 -> {
+                secuencia.add("rojo")
+                secJuego.setValue(secuencia)
             }
         }
+        //}
     }
 
     /**
@@ -134,88 +142,36 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
      */
     @SuppressLint("SetTextI18n")
     fun comprobar(color: String) {
-        /*if (secuencia.isEmpty()) {
+        comprobacion.add(color)
+        indice = comprobacion.size - 1
+        val resultado = comprobacion[indice] == secuencia[indice]
+        if (comprobacion.size == ronda) {
+            Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
+            numero++
+            ronda++
+
+            liveRonda.value = ronda
+            runBlocking {
+                Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
+                    .show()
+            }
+            actualizarRecord()
+            mostrarSecuencia()
+            comprobacion = arrayListOf()
+        }
+        if (!resultado && comprobacion.size != ronda) {
             ronda = 1
             numero = 1
             liveRonda.value = ronda
-
-            Toast.makeText(context, "Presiona Play para jugar", Toast.LENGTH_SHORT)
-                .show()
+            actualizarRecord()
+            Toast.makeText(
+                context,
+                "Ohhh...has fallado,vuelve a intentarlo",
+                Toast.LENGTH_SHORT
+            ).show()
             secuencia.clear()
-            secJuego.value?.clear()
             comprobacion.clear()
-        } else {*/
-       /* val iterator = comprobacion.iterator()
-        while(iterator.hasNext()){
-            val item = iterator.next()
-            if(item[indice] == indice){
-                iterator.remove()
-            }
-        }*/
-            comprobacion.add(color)
-            indice = comprobacion.size - 1
-            val resultado = comprobacion[indice] == secuencia[indice]
-            if (comprobacion.size == ronda) {
-                Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
-                numero++
-                ronda++
-                //record++
-                liveRonda.value = ronda
-                // liveRecord.value = record
-                runBlocking {
-                    Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
-                        .show()
-                }
-                actualizarRecord()
-                mostrarSecuencia()
-                comprobacion = arrayListOf()
-            }
-            if (!resultado && comprobacion.size != ronda) {
-                ronda = 1
-                numero = 1
-                liveRonda.value = ronda
-                // liveRecord.value = record
-                actualizarRecord()
-                Toast.makeText(
-                    context,
-                    "Ohhh...has fallado,vuelve a intentarlo",
-                    Toast.LENGTH_SHORT
-                ).show()
-                secuencia.clear()
-                comprobacion.clear()
-                secJuego.value?.clear()
-                /*if (secuencia[0] == color) {
-                    secuencia.removeAt(0)
-                    secJuego.value = secuencia
-                    Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
-                    if (secuencia.isEmpty()) {
-                        numero++
-                        ronda++
-                        //record++
-                        liveRonda.value = ronda
-                       // liveRecord.value = record
-                        runBlocking {
-                            Toast.makeText(context, "Ronda: $ronda", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                        actualizarRecord()
-                        mostrarSecuencia()
-
-                    }*/
-            } /*else {
-                ronda = 1
-                numero = 1
-                liveRonda.value = ronda
-                // liveRecord.value = record
-                actualizarRecord()
-                Toast.makeText(
-                    context,
-                    "Ohhh...has fallado,vuelve a intentarlo",
-                    Toast.LENGTH_SHORT
-                ).show()
-                secuencia.clear()
-                secJuego.value?.clear()
-
-            }*/
+            secJuego.value?.clear()
         }
     }
+}
