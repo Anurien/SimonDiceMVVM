@@ -7,9 +7,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
-import androidx.room.Room
-import androidx.room.RoomDatabase
-import com.google.firebase.FirebaseApp
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
@@ -26,14 +23,12 @@ import com.google.firebase.database.ktx.getValue
 class MyViewModel(application: Application) : AndroidViewModel(application) {
     private var ronda = 1     //número de ronda
     private var record = 1     //número de record
-    private var numero = 1    //número de luces encendidas
     private var secuencia = ArrayList<String>() //Secuencia en ronda actual
     private var comprobacion = ArrayList<String>() //Secuencia comprobar en ronda actual
-    private lateinit var fireBaseR : DatabaseReference
-    var indice = 1
-    var room: AppDatabase? = null
+    private lateinit var fireBaseR: DatabaseReference
+    private var indice = 1 //numero de elementos de comprobacion
 
-
+    // para poder utilizar toast en el view
     @SuppressLint("StaticFieldLeak")
     private val context: Context = getApplication<Application>().applicationContext
 
@@ -50,59 +45,38 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
         secJuego.value = secuencia
         liveRonda.value = ronda
         liveRecord.value = record
-        fireBaseR = Firebase.database("https://simondicef-default-rtdb.europe-west1.firebasedatabase.app/").getReference("record")
-        //Defino el listener de la puntuación
+        fireBaseR =
+            Firebase.database("https://simondicef-default-rtdb.europe-west1.firebasedatabase.app/")
+                .getReference("record")
+        //Defino el listener del record
         val recordListener = object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 liveRecord.value = dataSnapshot.getValue<Int>()
                 Log.d("RecFirebase", liveRecord.value.toString())
             }
+
             override fun onCancelled(error: DatabaseError) {
                 Log.d("ReaLTime", "recordListener:OnCancelled", error.toException())
             }
         }
         //Añado el listener a la BD
         fireBaseR.addValueEventListener(recordListener)
-     /*   room = Room
-            .databaseBuilder(
-                context,
-                AppDatabase::class.java, "Record"
-            )
-            .build()
-        //recogerRecord()
-
-        val roomCorrutine = GlobalScope.launch(Dispatchers.Main) {
-            try {
-                liveRecord.value = room!!.recordDao().getRecord()
-                Log.d("recSQLite", liveRecord.value.toString())
-            } catch (ex: java.lang.NullPointerException) {
-                room!!.recordDao().crearRecord()
-                liveRecord.value = room!!.recordDao().getRecord()
-            }
-        }
-        roomCorrutine.start()*/
 
     }
 
+    /**
+     * Actualiza el record de la base de datos con el mutablelive
+     */
     fun actualizarRecord() {
         liveRecord.value = liveRonda.value
-       fireBaseR.setValue(liveRecord.value)
-        Log.d("FireAct",liveRecord.toString())
-       /* val updateCorrutine = GlobalScope.launch(Dispatchers.Main) {
-
-            room!!.recordDao().update(Record(1, liveRecord.value))
-        }
-        updateCorrutine.start()*/
+        fireBaseR.setValue(liveRecord.value)
+        Log.d("FireAct", liveRecord.toString())
 
     }
-
-    // el postValue avisa al observador de que cambió un valor para ejecutar el trozo de código una vez haya detectado este cambio
-    // el juego esta empezando, borra lo anterior y añade el valor de la lista de colores random
 
     internal fun iniciarPartida() {
         estado.value = false
         mostrarSecuencia()
-        //recogerRecord()
     }
 
     /**
@@ -111,7 +85,6 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
     fun mostrarSecuencia() {
 
         var encendido = 0L
-        //for (i in 1..ronda) {
         val random = Random().nextInt(4)
         encendido += 1000L
         when (random) {
@@ -132,7 +105,6 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
                 secJuego.setValue(secuencia)
             }
         }
-        //}
     }
 
     /**
@@ -147,7 +119,6 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
         val resultado = comprobacion[indice] == secuencia[indice]
         if (comprobacion.size == ronda) {
             Toast.makeText(context, "Acierto", Toast.LENGTH_SHORT).show()
-            numero++
             ronda++
 
             liveRonda.value = ronda
@@ -161,7 +132,6 @@ class MyViewModel(application: Application) : AndroidViewModel(application) {
         }
         if (!resultado && comprobacion.size != ronda) {
             ronda = 1
-            numero = 1
             liveRonda.value = ronda
             actualizarRecord()
             Toast.makeText(
